@@ -19,7 +19,7 @@ def display_progress(progress, title = None):
     
 # Train the given agent. The agent can be trained indefinitely or until a given maximum parameter.
 # Can be stopped eraly.
-def train(title, agent, *args, maxError = -1, maxEpochs = 0, epsilon=0, simLimit=0, errorCheck=50, useBest = False, restoreBest = False, **kwargs):
+def train(title, agent, *args, maxError = -1, maxEpisodes = 0, epsilon=0, simLimit=0, errorCheck=50, useBest = False, restoreBest = False, **kwargs):
     def agentError(agent):
         try:
             return agent.error()
@@ -28,26 +28,26 @@ def train(title, agent, *args, maxError = -1, maxEpochs = 0, epsilon=0, simLimit
     s = time.time()
     i = totalSteps = 0
     bestError = error = agentError(agent)
-    bestEpoch = 0
+    bestEpisode = 0
     try:
-        while error >= maxError and (not maxEpochs or agent.epoch() < maxEpochs):
+        while error >= maxError and (not maxEpisodes or agent.episode() < maxEpisodes):
             steps = agent.train(*args, epsilon=epsilon, simLimit=simLimit, **kwargs)
-            percent = 1.0 if not maxEpochs else agent.epoch()/maxEpochs
-            display_progress(percent, f"Time: {time.time()-s:.2f} seconds\nEpoch: {agent.epoch()}\nError: {error}")
-            totalSteps += steps
+            percent = 1.0 if not maxEpisodes else agent.episode()/maxEpisodes
+            display_progress(percent, f"Time: {time.time()-s:.2f} seconds\nEpisode: {agent.episode()}\nError: {error}")
+            totalSteps += steps or 0
             i += 1
             if i % errorCheck == 0:
                 error = agentError(agent)
                 if useBest and error < bestError:
                     agent.rl().backup()
                     bestError = error
-                    bestEpoch = agent.epoch()
+                    bestEpisode = agent.episode()
                 elif useBest and restoreBest:
                     agent.rl().restore()
     except KeyboardInterrupt:
         pass
     if useBest:
-        print("Using best error:", bestError, "from epoch:", bestEpoch)
+        print("Using best error:", bestError, "from episode:", bestEpisode)
         agent.rl().restore()
     agent.plot(title)
     

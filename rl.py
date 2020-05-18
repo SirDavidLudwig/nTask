@@ -8,8 +8,10 @@ from hrr import hrri, convolve, LTM
 class HolographicNeuralNetwork:
     
     def __init__(self, *layers, verbose = False, separateTarget = False):
+        self.__hrrSize = layers[0]
+        
         # Long-term memory
-        self.__ltm = LTM(layers[0])
+        self.__ltm = LTM(self.__hrrSize)
         
         # Neural networks
         self.__modelTarget = self.__modelPredict = self.createModel(layers)
@@ -50,8 +52,11 @@ class HolographicNeuralNetwork:
         inputs = np.array([self.encode(f"{state}*{a}") for a in actions])
         return self.__modelTarget.predict(inputs, verbose = self.__verbose)
     
-    def value(self, state, action):
-        inputs = np.array([self.encode(f"{state}*{action}")])
+    def value(self, state, action = None):
+        if action:
+            inputs = np.array([self.encode(f"{state}*{action}")])
+        else:
+            inputs = np.array([self.encode(f"{state}")])
         return self.__modelPredict.predict(inputs, verbose = self.__verbose)[0]
     
     def averageValue(self, state, action):
@@ -64,7 +69,8 @@ class HolographicNeuralNetwork:
         return np.min(self.value(state, action))
     
     def fit(self, stateAction, target):
-        self.__modelPredict.fit(np.array([stateAction]), np.array([target]), verbose = self.__verbose)
+        inputs = self.encode(stateAction) if type(stateAction) == str else stateAction
+        self.__modelPredict.fit(np.array([inputs]), np.array([target]), verbose = self.__verbose)
         
     def encode(self, value):
         return self.__ltm.encode(value)
@@ -79,7 +85,10 @@ class HolographicNeuralNetwork:
         self.__lastPrediction = None
         
     def traces(self, states, actions):
-        return np.array([[self.averageValue(s, a) for s in states] for a in actions])        
+        return np.array([[self.averageValue(s, a) for s in states] for a in actions])       
+    
+    def hrrSize(self):
+        return self.__hrrSize
         
 class NQLearningNetwork(HolographicNeuralNetwork):
     

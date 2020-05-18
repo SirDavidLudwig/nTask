@@ -65,7 +65,7 @@ class RlAgent:
         self.__rl = rl
         self.__terminated = False
         self.__stepCount = 0
-        self.__epoch = 0
+        self.__episode = 0
         self.__learnEnabled = False
         self.__stateMap = StateMap(
             self.onBegin, self.onStep, self.onFinish
@@ -120,10 +120,10 @@ class RlAgent:
         self.__rl.newEpisode()
         self.__terminated = False
         self.__stepCount = 0
-        self.__epoch += 1
+        self.__episode += 1
         
-    def epoch(self):
-        return self.__epoch
+    def episode(self):
+        return self.__episode
     
     def rl(self):
         return self.__rl
