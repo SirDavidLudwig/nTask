@@ -101,8 +101,7 @@ class NQLearningNetwork(HolographicNeuralNetwork):
         self.__eligibilityFactor = eligibilityFactor
         self.__copyFrequency = copyFrequency
         self.__nUpdates = 0
-        self.__defaultReward = 0
-        self.__reward = self.__defaultReward
+        self.__reward = None
         self.__prevAction = None
         self.__eligibilityTrace = np.zeros(hrrSize)
         
@@ -123,7 +122,7 @@ class NQLearningNetwork(HolographicNeuralNetwork):
         delta = self.__reward + self.__discountFactor*qValue - target[toUpdate]
         target[toUpdate] += self.__learnRate*delta
         self.fit(eligibilityTrace, target)
-        self.__reward = self.__defaultReward
+        self.__reward = None
         self.__nUpdates += 1
         if self.__isDeep and self.__nUpdates % self.__copyFrequency == 0:
             self.copyTargetWeights()
@@ -133,12 +132,12 @@ class NQLearningNetwork(HolographicNeuralNetwork):
         prevPrediction, prevAction = self.lastPrediction(), self.__prevAction
         values = super(NQLearningNetwork, self).predict(state, actions)
         isRandom, self.__prevAction = self.policy(values, epsilon)
-        if learn and prevPrediction:
+        if learn and prevPrediction and self.__reward is not None:
             self.__eligibilityTrace *= self.__eligibilityFactor
             self.__eligibilityTrace += prevPrediction[0][prevAction] # previous HRR
             targetValues = self.targetValues(state, actions) if self.__isDeep else values
             self.update(state, prevPrediction, targetValues, self.__eligibilityTrace, prevAction)
-        if isRandom:
+        if isRandom: # This should also check for a null reward value
             self.__eligibilityTrace *= 0.0
         return self.__prevAction
     
@@ -155,7 +154,7 @@ class NQLearningNetwork(HolographicNeuralNetwork):
     def newEpisode(self):
         """Reset and prepare for the next episode"""
         self.clearLastPrediction()
-        self.__reward = self.__defaultReward
+        self.__reward = None
         self.__prevAction = None
         self.__eligibilityTrace *= 0.0
         
